@@ -1,301 +1,331 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#172554">
-<title>Crew Break Monitoring | SSS Menteng</title>
-<style>
-:root{--navy:#172554;--blue:#2563eb;--green:#15803d;--red:#b91c1c;--bg:#f3f6fc;--ink:#172033;--muted:#64748b;--line:#dce4ef}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-.shell{max-width:1040px;margin:auto;padding:16px}.hero{background:linear-gradient(125deg,#172554,#2563eb);border-radius:22px;color:#fff;padding:24px;box-shadow:0 12px 30px #17255420}
-.kicker{font-size:11px;letter-spacing:1.5px;font-weight:800;opacity:.8}h1{font-size:clamp(23px,4vw,34px);line-height:1.2;margin:8px 0}.subtitle{opacity:.85;margin:0}
-.pill{display:inline-block;margin-top:14px;border-radius:30px;background:#ffffff25;padding:7px 13px;font-size:12px;font-weight:750}
-.tabs{display:flex;gap:8px;margin:16px 0}.tab{flex:1;border:1px solid var(--line);background:#fff;color:var(--navy);padding:12px;border-radius:12px;font-weight:800;cursor:pointer}.tab.active{background:var(--navy);color:#fff}
-.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 4px 15px #152b4b08}
-h2{font-size:18px;margin:0 0 12px}h3{font-size:15px;margin:0 0 8px}.muted{color:var(--muted)}.small{font-size:12px}
-label{display:block;font-size:12px;font-weight:800;margin:13px 0 6px}input,select{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:12px;font:inherit;background:#fff;color:var(--ink)}
-input:focus,select:focus{outline:3px solid #93c5fd88;border-color:var(--blue)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-button{font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.btn{border:0;color:#fff;font-weight:800;border-radius:12px;padding:14px 12px;width:100%}.green{background:var(--green)}.red{background:var(--red)}.blue{background:var(--blue)}.outline{border:1px solid #cbd5e1;background:#fff;color:var(--navy)}
-.notice{padding:12px;border-radius:12px;margin-top:14px;white-space:pre-line;display:none}.notice.info{display:block;background:#eff6ff;color:#1e40af}.notice.error{display:block;background:#fef2f2;color:#991b1b}.notice.ok{display:block;background:#f0fdf4;color:#166534}
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{border-radius:14px;background:#f1f5f9;padding:13px}.metric b{font-size:26px;display:block}.metric span{font-size:11px;color:var(--muted)}
-.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px;min-width:640px}th,td{text-align:left;padding:11px;border-bottom:1px solid var(--line)}th{background:#f8fafc;white-space:nowrap}
-.tag{border-radius:20px;padding:4px 8px;font-size:11px;font-weight:800;background:#e2e8f0}.tag.over{background:#fee2e2;color:#991b1b}.tag.ok{background:#dcfce7;color:#166534}
-.hidden{display:none!important}.foot{text-align:center;color:var(--muted);font-size:11px;padding:12px}
-@media(max-width:620px){.metrics{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.card{padding:16px}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#173b8f">
+  <title>Crew Break Monitoring V2.0</title>
+  <style>
+    :root {
+      --navy:#172b59; --blue:#2457d6; --blue2:#3977f6;
+      --green:#168344; --red:#c51f25; --ink:#17213b;
+      --muted:#65718b; --line:#d9e2f1; --bg:#f2f5fb;
+      --white:#fff; --shadow:0 12px 34px rgba(23,43,89,.08);
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; min-height:100vh; color:var(--ink);
+      background:var(--bg); font-family:Inter,Arial,Helvetica,sans-serif;
+    }
+    .page { width:min(1120px, calc(100% - 32px)); margin:28px auto 48px; }
+    .hero {
+      color:#fff; padding:28px 30px; border-radius:24px;
+      background:linear-gradient(115deg,#172b59,#245ee7);
+      box-shadow:var(--shadow); margin-bottom:20px;
+    }
+    .eyebrow {
+      display:inline-flex; padding:8px 14px; border-radius:30px;
+      background:rgba(255,255,255,.16); font-size:12px;
+      font-weight:800; letter-spacing:.04em;
+    }
+    h1 { margin:15px 0 6px; font-size:clamp(24px,4vw,34px); }
+    .hero p { margin:0; color:#e4ebff; line-height:1.55; }
+    .tabs { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:20px 0; }
+    .tab {
+      border:1px solid var(--line); background:#fff; color:var(--navy);
+      border-radius:15px; padding:15px; font-weight:900; font-size:15px;
+    }
+    .tab.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+    .card {
+      background:var(--white); border:1px solid var(--line); border-radius:22px;
+      padding:clamp(20px,3vw,30px); box-shadow:var(--shadow); margin-bottom:18px;
+    }
+    h2 { margin:0 0 8px; font-size:23px; }
+    .intro { color:var(--muted); margin:0 0 24px; line-height:1.6; }
+    label { display:block; margin:18px 0 9px; font-size:13px; font-weight:900; letter-spacing:.02em; }
+    input,select {
+      display:block; width:100%; min-height:58px; border:1px solid #cbd7e9;
+      border-radius:14px; padding:0 16px; background:#fff; color:var(--ink);
+      font:inherit; font-size:17px; outline:none;
+    }
+    input:focus,select:focus { border-color:var(--blue2); box-shadow:0 0 0 3px rgba(57,119,246,.13); }
+    .actions { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:24px; }
+    button { cursor:pointer; font:inherit; }
+    .action {
+      min-height:64px; border:0; border-radius:15px; color:#fff;
+      font-size:17px; font-weight:900; padding:12px;
+      transition:transform .12s ease,opacity .12s ease;
+    }
+    .action:active { transform:scale(.99); }
+    .action:disabled { opacity:.55; cursor:wait; }
+    .start { background:var(--green); }
+    .end { background:var(--red); }
+    .notice {
+      display:none; margin-top:18px; border-radius:14px; padding:15px 16px;
+      line-height:1.5; font-weight:600; overflow-wrap:anywhere;
+    }
+    .notice.show { display:block; }
+    .notice.info { background:#edf4ff; color:#17449b; }
+    .notice.success { background:#eaf7ef; color:#126334; }
+    .notice.error { background:#fff0f0; color:#a5151b; }
+    .meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+    .pill { background:#eef2f9; color:#40506e; border-radius:30px; padding:7px 11px; font-size:12px; font-weight:800; }
+    .rules { color:var(--muted); line-height:1.7; font-size:14px; margin:12px 0 0; padding-left:19px; }
+    .footer { text-align:center; color:#7b879d; font-size:12px; padding:12px; }
+    .manager-panel { display:none; }
+    .manager-panel.active { display:block; }
+    @media(max-width:650px) {
+      .page { width:calc(100% - 20px); margin:12px auto 30px; }
+      .hero { border-radius:19px; padding:23px 20px; }
+      .tabs { gap:8px; }
+      .tab { padding:14px 8px; font-size:13px; }
+      .actions { grid-template-columns:1fr; }
+      .action { min-height:60px; }
+      .card { border-radius:18px; }
+    }
+  </style>
 </head>
 <body>
-<main class="shell">
-<header class="hero">
-  <div class="kicker">STORE OPERATIONS CONTROL SYSTEM</div>
-  <h1>CREW BREAK MONITORING</h1>
-  <p class="subtitle">Absensi istirahat digital & monitoring kedisiplinan</p>
-  <span class="pill">MULTI STORE · STANDAR 60 MENIT</span>
-</header>
-<nav class="tabs" aria-label="Menu"><button class="tab active" id="tabCrew" type="button">ABSENSI CREW</button><button class="tab" id="tabManager" type="button">DASHBOARD MANAGER</button></nav>
+  <main class="page">
+    <header class="hero">
+      <span class="eyebrow">MULTI STORE · STANDAR 60 MENIT</span>
+      <h1>CREW BREAK MONITORING</h1>
+      <p>Sistem pencatatan waktu istirahat crew seluruh store.</p>
+    </header>
 
-<section id="crewPanel">
- <div class="card">
-  <h2>Absensi Istirahat</h2>
-  <p class="muted small">Pilih store tempat bertugas, masukkan NIK, lalu pilih mulai atau selesai istirahat.</p>
-  <label for="storeCode">STORE BERTUGAS</label>
-  <select id="storeCode" required>
-    <option value="">Pilih store</option>
-    <option value="C17">C17 — SSS MENTENG</option>
-    <option value="C33">C33 — SKS CITYWALK</option>
-    <option value="C87">C87 — SS CITRA TOWER</option>
-  </select>
-  <label for="nik">NIK CREW</label>
-  <input id="nik" autocomplete="username" placeholder="Masukkan NIK" maxlength="40">
-<div class="grid2" style="margin-top:18px">
-    <button class="btn green" id="startBtn" type="button">MULAI ISTIRAHAT</button>
-    <button class="btn red" id="endBtn" type="button">SELESAI ISTIRAHAT</button>
-  </div>
-  <div id="crewMessage" class="notice" role="status"></div>
- </div>
- <div class="card"><h3>Ketentuan</h3><p class="muted small">Satu sesi per crew per tanggal. Waktu dihitung oleh server, bukan jam HP. Gunakan store tempat kamu bertugas untuk mulai dan menyelesaikan istirahat.</p></div>
-</section>
+    <nav class="tabs" aria-label="Menu utama">
+      <button class="tab active" id="crewTab" type="button">ABSENSI CREW</button>
+      <button class="tab" id="managerTab" type="button">DASHBOARD MANAGER</button>
+    </nav>
 
-<section id="managerPanel" class="hidden">
- <div class="card">
-  <h2>Akses Manager Store</h2>
-  <p class="muted small">Dashboard hanya boleh dibuka oleh pengguna yang diberi izin di backend. Akses crew hanya menggunakan NIK; dashboard manager tetap memerlukan login terpisah.</p>
-  <label for="managerUser">ID / Email Manager</label><input id="managerUser" autocomplete="username" placeholder="Akun manager">
-  <label for="managerPassword">Kata Sandi Manager</label><input id="managerPassword" type="password" autocomplete="current-password" placeholder="Kata sandi">
-  <button class="btn blue" id="managerLogin" type="button" style="margin-top:14px">LOGIN & MUAT DATA</button>
-  <div id="managerMessage" class="notice" role="status"></div>
- </div>
- <div id="dashboard" class="hidden">
-  <div class="card">
-   <div class="grid2">
-    <div><label for="period">Periode</label><input type="month" id="period"></div>
-    <div style="align-self:end"><button class="btn outline" id="refresh" type="button">REFRESH DATA</button></div>
-  </div>
-  </div>
-  <div class="card"><div class="metrics">
-    <div class="metric"><b id="mTotal">0</b><span>Total sesi</span></div>
-    <div class="metric"><b id="mOnTime">0</b><span>Tepat waktu</span></div>
-    <div class="metric"><b id="mOver">0</b><span>Over break</span></div>
-    <div class="metric"><b id="mActive">0</b><span>Belum selesai</span></div>
-  </div></div>
-  <div class="card"><h2>Ranking Keterlambatan</h2><div class="tablewrap"><table><thead><tr><th>Crew</th><th>NIK</th><th>Frekuensi Over</th><th>Total Over (menit)</th></tr></thead><tbody id="rankingRows"></tbody></table></div></div>
-  <div class="card"><h2>Riwayat Istirahat</h2><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Mulai</th><th>Selesai</th><th>Durasi</th><th>Over</th><th>Status</th></tr></thead><tbody id="logRows"></tbody></table></div></div>
- </div>
-</section>
-<div class="foot">CREW BREAK MONITORING V1.1 · SINGLE WEBSITE · NIK ONLY</div>
-</main>
+    <section class="card" id="crewPanel">
+      <h2>Absensi Istirahat</h2>
+      <p class="intro">Pilih store tempat bertugas, masukkan NIK, lalu pilih mulai atau selesai istirahat.</p>
+
+      <label for="storeSelect">STORE BERTUGAS</label>
+      <select id="storeSelect" autocomplete="organization">
+        <option value="">Memuat daftar store...</option>
+      </select>
+
+      <label for="nikInput">NIK CREW</label>
+      <input id="nikInput" type="text" inputmode="text" autocomplete="off"
+        autocapitalize="characters" spellcheck="false" placeholder="Masukkan NIK crew">
+
+      <div class="actions">
+        <button class="action start" id="startBtn" type="button">MULAI ISTIRAHAT</button>
+        <button class="action end" id="endBtn" type="button">SELESAI ISTIRAHAT</button>
+      </div>
+
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+      <div class="meta">
+        <span class="pill" id="apiStatus">Menghubungkan API...</span>
+        <span class="pill">BACKEND V2.0</span>
+        <span class="pill">NIK ONLY · TANPA PIN</span>
+      </div>
+    </section>
+
+    <section class="card manager-panel" id="managerPanel">
+      <h2>Dashboard Manager</h2>
+      <p class="intro">Modul dashboard manager akan diaktifkan setelah modul absensi crew V2.0 selesai diuji.</p>
+      <div class="notice info show">Dashboard belum diaktifkan pada tahap ini.</div>
+    </section>
+
+    <section class="card">
+      <h2>Ketentuan</h2>
+      <ul class="rules">
+        <li>Satu sesi istirahat per crew per tanggal.</li>
+        <li>Standar waktu istirahat maksimal 60 menit.</li>
+        <li>Waktu transaksi dihitung oleh server.</li>
+        <li>Gunakan store tempat kamu bertugas saat mulai istirahat.</li>
+        <li>Untuk menyelesaikan istirahat, pilih store yang sama dengan saat memulai.</li>
+      </ul>
+    </section>
+
+    <div class="footer">CREW BREAK MONITORING V2.0 · ASIA/JAKARTA</div>
+  </main>
+
 <script>
-"use strict";
-/*
-  KONFIGURASI:
-  Isi URL endpoint HTTPS milik API bridge yang mengembalikan JSON.
-  Isi URL Web App Apps Script yang berakhiran /exec.
-  Frontend menggunakan JSONP GET agar tidak terkena kendala CORS GitHub Pages.
-  Jangan gunakan endpoint ini untuk mengirim data rahasia.
-*/
-const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbx8LgsbrXjfCAoCdMrrFoeg_n_-SPoXSh4O72zBh0I6ty7kOxU8U4jKkOw7Cp1tGb371A/exec",
-  BREAK_LIMIT: 60
-};
+(function () {
+  "use strict";
 
-const $ = id => document.getElementById(id);
-let managerSession = "";
-let isBusy = false;
+  const CONFIG = {
+    // URL Web App deployment lama dipertahankan; deploy V2.0 sebagai versi baru
+    // pada deployment yang sama agar URL ini tidak berubah.
+    API_URL: "https://script.google.com/macros/s/AKfycbx8LgsbrXjfCAoCdMrrFoeg_n_-SPoXSh4O72zBh0I6ty7kOxU8U4jKkOw7Cp1tGb371A/exec",
+    EXPECTED_BUILD: "CBM_V2_0_EXISTING_DB_NIK_ONLY",
+    REQUEST_TIMEOUT_MS: 15000
+  };
 
-function configured() {
-  return /^https:\/\//i.test(CONFIG.API_URL) &&
-    !CONFIG.API_URL.includes("ISI_URL_WEB_APP");
-}
-function notice(id, kind, text) {
-  const node = $(id);
-  node.className = "notice " + kind;
-  node.textContent = text;
-}
-function showPanel(name) {
-  const manager = name === "manager";
-  $("crewPanel").classList.toggle("hidden", manager);
-  $("managerPanel").classList.toggle("hidden", !manager);
-  $("tabCrew").classList.toggle("active", !manager);
-  $("tabManager").classList.toggle("active", manager);
-}
-$("tabCrew").addEventListener("click", () => showPanel("crew"));
-$("tabManager").addEventListener("click", () => showPanel("manager"));
+  const el = (id) => document.getElementById(id);
+  const storeSelect = el("storeSelect");
+  const nikInput = el("nikInput");
+  const notice = el("notice");
+  const apiStatus = el("apiStatus");
+  const startBtn = el("startBtn");
+  const endBtn = el("endBtn");
 
-if (!configured()) {
-  notice("crewMessage", "info", "Website belum terhubung ke backend. Admin perlu mengisi URL Web App Apps Script pada CONFIG.API_URL.");
-}
+  function showNotice(message, type) {
+    notice.textContent = message || "Tidak ada pesan dari server.";
+    notice.className = "notice show " + (type || "info");
+  }
 
-function callApi(payload) {
-  return new Promise((resolve, reject) => {
-    if (!configured()) {
-      reject(new Error("URL Web App Apps Script belum dikonfigurasi."));
+  function setBusy(busy) {
+    startBtn.disabled = busy;
+    endBtn.disabled = busy;
+    startBtn.textContent = busy ? "MEMPROSES..." : "MULAI ISTIRAHAT";
+    endBtn.textContent = busy ? "MEMPROSES..." : "SELESAI ISTIRAHAT";
+  }
+
+  function jsonp(params) {
+    return new Promise((resolve, reject) => {
+      const callbackName = "cbmV2_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+      const script = document.createElement("script");
+      const query = new URLSearchParams(Object.assign({}, params, { callback: callbackName }));
+      let finished = false;
+
+      const timer = setTimeout(() => finish(new Error("Server tidak merespons. Periksa koneksi atau deployment API.")), CONFIG.REQUEST_TIMEOUT_MS);
+
+      function finish(error, data) {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+        try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+        if (error) reject(error);
+        else resolve(data);
+      }
+
+      window[callbackName] = function (data) { finish(null, data); };
+      script.onerror = function () { finish(new Error("Tidak dapat mengakses API. Periksa URL deployment dan akses Web App.")); };
+      script.src = CONFIG.API_URL + "?" + query.toString();
+      document.head.appendChild(script);
+    });
+  }
+
+  function normalizeNik(value) {
+    return String(value || "").trim().toUpperCase();
+  }
+
+  async function loadHealth() {
+    apiStatus.textContent = "Memeriksa backend...";
+    try {
+      const data = await jsonp({ action: "health" });
+
+      if (!data || data.success !== true) {
+        throw new Error(data && data.message ? data.message : "Health check gagal.");
+      }
+
+      if (data.build !== CONFIG.EXPECTED_BUILD) {
+        apiStatus.textContent = "Build API tidak sesuai";
+        showNotice(
+          "Website V2.0 sudah terbuka, tetapi backend yang merespons belum cocok. Build diterima: " +
+          (data.build || "tidak diketahui") +
+          ". Build yang diharapkan: " + CONFIG.EXPECTED_BUILD +
+          ". Jangan lakukan transaksi sebelum deployment backend diperiksa.",
+          "error"
+        );
+        return;
+      }
+
+      const stores = Array.isArray(data.stores) ? data.stores : [];
+      storeSelect.innerHTML = '<option value="">Pilih store tempat bertugas</option>';
+
+      stores.forEach((store) => {
+        const option = document.createElement("option");
+        option.value = store.code;
+        option.textContent = store.code + " — " + store.name;
+        storeSelect.appendChild(option);
+      });
+
+      apiStatus.textContent = "API V2.0 TERHUBUNG";
+      if (!stores.length) {
+        showNotice("Backend aktif, tetapi belum ada store berstatus ACTIVE pada MASTER STORE.", "error");
+      } else {
+        showNotice("Sistem siap digunakan. Pilih store dan masukkan NIK crew.", "info");
+      }
+    } catch (error) {
+      apiStatus.textContent = "API TIDAK TERHUBUNG";
+      storeSelect.innerHTML = '<option value="">Daftar store gagal dimuat</option>';
+      showNotice(error.message, "error");
+    }
+  }
+
+  async function submitBreak(action) {
+    const storeCode = storeSelect.value;
+    const nik = normalizeNik(nikInput.value);
+
+    if (!storeCode) {
+      showNotice("Silakan pilih store tempat bertugas.", "error");
+      storeSelect.focus();
       return;
     }
-    const callbackName = "cbmJsonp_" + Date.now() + "_" +
-      Math.random().toString(36).slice(2, 9);
-    const script = document.createElement("script");
-    const params = new URLSearchParams({
-      action: payload.action || "",
-      storeCode: payload.storeCode || "",
-      nik: payload.nik || "",
-      clientBuild: "CBM_WEB_1_1_NIK_ONLY",
-      callback: callbackName
-    });
-    let finished = false;
-    const cleanup = () => {
-      if (finished) return;
-      finished = true;
-      delete window[callbackName];
-      script.remove();
-      clearTimeout(timer);
-    };
-    const timer = setTimeout(() => {
-      cleanup();
-      reject(new Error("Server tidak merespons. Periksa URL Web App dan deployment."));
-    }, 15000);
-    window[callbackName] = data => {
-      cleanup();
-      resolve(data);
-    };
-    script.onerror = () => {
-      cleanup();
-      reject(new Error("Gagal mengakses Web App Apps Script."));
-    };
-    script.src = CONFIG.API_URL + "?" + params.toString();
-    document.body.appendChild(script);
-  });
-}
-
-async function submitBreak(action) {
-  if (isBusy) return;
-  const nik = $("nik").value.trim().toUpperCase();
-  const storeCode = $("storeCode").value;
-  if (!storeCode) return notice("crewMessage", "error", "Pilih store tempat bertugas.");
-  if (!nik) return notice("crewMessage", "error", "Masukkan NIK crew.");
-
-  isBusy = true;
-  $("startBtn").disabled = $("endBtn").disabled = true;
-  notice("crewMessage", "info", "Memproses transaksi...");
-  try {
-    const result = await callApi({
-      action: action === "start" ? "startBreak" : "endBreak",
-      storeCode, nik
-    });
-    if (!result.success) throw new Error((result.message || "Transaksi ditolak.") + (result.version ? " [API " + result.version + "]" : ""));
-    const lines = [result.message || "Transaksi berhasil", "Crew: " + (result.name || nik)];
-    if (action === "start") {
-      lines.push("Store: " + (result.store || storeCode));
-      lines.push("Mulai: " + (result.startTime || "-"));
-    } else {
-      lines.push("Selesai: " + (result.finishTime || "-"));
-      lines.push("Durasi: " + result.duration + " menit");
-      lines.push("Kelebihan: " + result.over + " menit");
-      lines.push("Status: " + (result.status || "-"));
+    if (!nik) {
+      showNotice("Silakan masukkan NIK crew.", "error");
+      nikInput.focus();
+      return;
     }
-    notice("crewMessage", "ok", lines.join("\n"));
-  } catch (error) {
-    notice("crewMessage", "error", error.message || "Gagal menghubungi server.");
-  } finally {
-    isBusy = false;
-    $("startBtn").disabled = $("endBtn").disabled = false;
-  }
-}
-$("startBtn").addEventListener("click", () => submitBreak("start"));
-$("endBtn").addEventListener("click", () => submitBreak("end"));
 
-function putText(id, value) { $(id).textContent = String(value); }
-function addCell(tr, text) {
-  const td = document.createElement("td");
-  td.textContent = text == null ? "" : String(text);
-  tr.appendChild(td);
-}
-function clearTable(id) { $(id).replaceChildren(); }
-function addEmpty(id, count) {
-  const tr = document.createElement("tr");
-  const td = document.createElement("td");
-  td.colSpan = count;
-  td.textContent = "Belum ada data pada periode ini.";
-  tr.appendChild(td);
-  $(id).appendChild(tr);
-}
-function renderDashboard(data) {
-  const metrics = data.metrics || {};
-  putText("mTotal", metrics.total ?? 0);
-  putText("mOnTime", metrics.onTime ?? 0);
-  putText("mOver", metrics.over ?? 0);
-  putText("mActive", metrics.active ?? 0);
+    setBusy(true);
+    showNotice("Mengirim transaksi ke server...", "info");
 
-  clearTable("rankingRows");
-  const ranking = Array.isArray(data.ranking) ? data.ranking : [];
-  ranking.forEach(r => {
-    const tr = document.createElement("tr");
-    [r.name, r.nik, r.overCount, r.overMinutes].forEach(x => addCell(tr, x));
-    $("rankingRows").appendChild(tr);
-  });
-  if (!ranking.length) addEmpty("rankingRows", 4);
+    try {
+      const data = await jsonp({
+        action: action,
+        storeCode: storeCode,
+        nik: nik
+      });
 
-  clearTable("logRows");
-  const logs = Array.isArray(data.logs) ? data.logs : [];
-  logs.forEach(r => {
-    const tr = document.createElement("tr");
-    [r.date, r.name, r.start, r.end, r.duration, r.over, r.status].forEach(x => addCell(tr, x));
-    $("logRows").appendChild(tr);
-  });
-  if (!logs.length) addEmpty("logRows", 7);
-}
-async function loadDashboard() {
-  if (!managerSession) return notice("managerMessage", "error", "Login manager terlebih dahulu.");
-  notice("managerMessage", "info", "Memuat data store...");
-  try {
-    const result = await callApi({
-      action: "managerDashboard",
-      session: managerSession,
-      storeCode: CONFIG.STORE_CODE,
-      period: $("period").value
-    });
-    if (!result.success) throw new Error(result.message || "Akses ditolak.");
-    renderDashboard(result);
-    $("dashboard").classList.remove("hidden");
-    notice("managerMessage", "ok", "Data berhasil diperbarui.");
-  } catch (error) {
-    notice("managerMessage", "error", error.message || "Gagal memuat dashboard.");
-  }
-}
-$("managerLogin").addEventListener("click", async () => {
-  const user = $("managerUser").value.trim();
-  const password = $("managerPassword").value;
-  if (!user || !password) return notice("managerMessage", "error", "Isi akun dan kata sandi manager.");
-  notice("managerMessage", "info", "Memverifikasi akses...");
-  try {
-    throw new Error("Dashboard Manager akan diaktifkan pada tahap berikutnya.");
-    const result = await callApi({action:"managerLogin",user,password,storeCode:CONFIG.STORE_CODE});
-    if (!result.success || !result.session) throw new Error(result.message || "Login ditolak.");
-    managerSession = result.session;
-    $("managerPassword").value = "";
-    await loadDashboard();
-  } catch (error) {
-    notice("managerMessage", "error", error.message || "Login gagal.");
-  }
-});
-$("refresh").addEventListener("click", loadDashboard);
-$("period").value = new Date().toLocaleDateString("sv-SE", {year:"numeric",month:"2-digit"}).slice(0,7);
+      if (!data || typeof data.success !== "boolean") {
+        throw new Error("Format respons backend tidak dikenali.");
+      }
 
-// Verifikasi versi backend saat halaman dibuka.
-// Tidak membuat transaksi dan tidak memerlukan NIK.
-(async function verifyBackend() {
-  try {
-    const result = await callApi({ action: "health" });
-    if (result && result.success) {
-      notice("crewMessage", "info",
-        "Backend terhubung · API V" + (result.version || "?") +
-        " · " + ((result.stores || []).length) + " store aktif. Silakan masukkan NIK.");
+      if (data.build && data.build !== CONFIG.EXPECTED_BUILD) {
+        throw new Error("Versi backend tidak sesuai. Build server: " + data.build);
+      }
+
+      if (data.success) {
+        let detail = data.message || "Transaksi berhasil.";
+        if (data.name) detail += " Crew: " + data.name + ".";
+        if (data.store) detail += " Store: " + data.store + ".";
+        if (data.startTime) detail += " Jam mulai: " + data.startTime + ".";
+        if (data.finishTime) detail += " Jam selesai: " + data.finishTime + ".";
+        if (typeof data.duration === "number") detail += " Durasi: " + data.duration + " menit.";
+        if (data.status) detail += " Status: " + data.status + ".";
+        if (data.transactionId) detail += " ID: " + data.transactionId + ".";
+        showNotice(detail, "success");
+      } else {
+        showNotice(data.message || "Transaksi ditolak oleh server.", "error");
+      }
+    } catch (error) {
+      showNotice(error.message, "error");
+    } finally {
+      setBusy(false);
     }
-  } catch (err) {
-    notice("crewMessage", "error", "Koneksi backend gagal: " + err.message);
   }
+
+  startBtn.addEventListener("click", () => submitBreak("startBreak"));
+  endBtn.addEventListener("click", () => submitBreak("endBreak"));
+
+  el("crewTab").addEventListener("click", () => {
+    el("crewTab").classList.add("active");
+    el("managerTab").classList.remove("active");
+    el("crewPanel").style.display = "block";
+    el("managerPanel").classList.remove("active");
+  });
+
+  el("managerTab").addEventListener("click", () => {
+    el("managerTab").classList.add("active");
+    el("crewTab").classList.remove("active");
+    el("crewPanel").style.display = "none";
+    el("managerPanel").classList.add("active");
+  });
+
+  nikInput.addEventListener("input", () => {
+    nikInput.value = nikInput.value.toUpperCase().replace(/\s+/g, "");
+  });
+
+  loadHealth();
 })();
-
 </script>
 </body>
 </html>
