@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#173b8f">
-  <title>Crew Break Monitoring V2.1</title>
+  <title>Crew Break Monitoring V2.2 Dashboard</title>
   <style>
     :root {
       --navy:#172b59; --blue:#2457d6; --blue2:#3977f6;
@@ -74,6 +74,24 @@
     .footer { text-align:center; color:#7b879d; font-size:12px; padding:12px; }
     .manager-panel { display:none; }
     .manager-panel.active { display:block; }
+    .dash-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin:18px 0; }
+    .dash-kpi { padding:16px; border:1px solid var(--line); border-radius:16px; background:#f8faff; }
+    .dash-kpi b { display:block; font-size:26px; margin-top:7px; color:var(--navy); }
+    .dash-kpi span { color:var(--muted); font-size:12px; font-weight:800; }
+    .dash-filters { display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
+    .dash-filters label { margin-top:8px; }
+    .dash-btn { min-height:48px; border:0; border-radius:12px; padding:0 18px; background:var(--blue); color:#fff; font-weight:900; }
+    .dash-btn.secondary { background:#e9eef9; color:var(--navy); }
+    .dash-table-wrap { overflow:auto; border:1px solid var(--line); border-radius:14px; }
+    .dash-table { width:100%; border-collapse:collapse; min-width:850px; font-size:13px; }
+    .dash-table th,.dash-table td { padding:11px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+    .dash-table th { background:#edf2fb; color:var(--navy); }
+    .status-tag { display:inline-block; padding:5px 8px; border-radius:20px; font-size:11px; font-weight:900; background:#eef2f9; }
+    .status-tag.bad { background:#fff0f0; color:#a5151b; }
+    .status-tag.warn { background:#fff7df; color:#875c00; }
+    .status-tag.good { background:#eaf7ef; color:#126334; }
+    .dash-small { color:var(--muted); font-size:12px; line-height:1.5; }
+    @media(max-width:850px) { .dash-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .dash-filters { grid-template-columns:1fr; } }
     @media(max-width:650px) {
       .page { width:calc(100% - 20px); margin:12px auto 30px; }
       .hero { border-radius:19px; padding:23px 20px; }
@@ -127,15 +145,44 @@
       <div id="notice" class="notice" role="status" aria-live="polite"></div>
       <div class="meta">
         <span class="pill" id="apiStatus">Menghubungkan API...</span>
-        <span class="pill">BACKEND V2.1</span>
+        <span class="pill">BACKEND V2.1 · DASHBOARD V2.2</span>
         <span class="pill">NIK ONLY · TANPA PIN</span>
       </div>
     </section>
 
     <section class="card manager-panel" id="managerPanel">
       <h2>Dashboard Manager</h2>
-      <p class="intro">Modul dashboard manager akan diaktifkan setelah modul absensi crew V2.0 selesai diuji.</p>
-      <div class="notice info show">Dashboard belum diaktifkan pada tahap ini.</div>
+      <p class="intro">Rekap kepatuhan absensi istirahat berdasarkan jadwal kerja dan BREAK LOG. Pilih tanggal operasional yang ingin dievaluasi.</p>
+      <div id="managerLoginBox">
+        <label for="managerPin">PIN DASHBOARD MANAGER</label>
+        <input id="managerPin" type="password" autocomplete="current-password" placeholder="Masukkan PIN manager">
+        <button class="dash-btn" id="managerLoginBtn" type="button" style="width:100%;margin-top:14px">MASUK DASHBOARD</button>
+        <div id="managerNotice" class="notice" role="status" aria-live="polite"></div>
+      </div>
+      <div id="managerReport" style="display:none">
+        <div class="dash-filters">
+          <div><label for="reportDate">TANGGAL OPERASIONAL</label><input type="date" id="reportDate"></div>
+          <div><label for="reportStore">STORE</label><select id="reportStore"><option value="">SEMUA STORE</option><option value="C17">SSS MENTENG</option><option value="C33">SKS CITY WALK SUDIRMAN</option><option value="C87">SS CITRA TOWER</option></select></div>
+          <button class="dash-btn" id="refreshReportBtn" type="button">TAMPILKAN</button>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin:16px 0">
+          <button class="dash-btn" id="exportPdfBtn" type="button">EXPORT PDF</button>
+          <button class="dash-btn secondary" id="managerLogoutBtn" type="button">KELUAR</button>
+        </div>
+        <div id="reportNotice" class="notice"></div>
+        <div class="dash-grid">
+          <div class="dash-kpi"><span>TERJADWAL SHIFT</span><b id="kScheduled">0</b></div>
+          <div class="dash-kpi"><span>POTENSI MANGKIR</span><b id="kAbsent">0</b></div>
+          <div class="dash-kpi"><span>BELUM SELESAI</span><b id="kIncomplete">0</b></div>
+          <div class="dash-kpi"><span>DATA ANOMALI</span><b id="kAnomaly">0</b></div>
+          <div class="dash-kpi"><span>ABSENSI LENGKAP</span><b id="kComplete">0</b></div>
+        </div>
+        <p class="dash-small">OFF, CT, EVENT, dan jadwal kosong tidak dihitung sebagai kewajiban absensi. Potensi mangkir berarti crew terjadwal shift tetapi tidak ditemukan pada BREAK LOG.</p>
+        <div class="dash-table-wrap" style="margin-top:14px">
+          <table class="dash-table"><thead><tr><th>STORE</th><th>NIK</th><th>NAMA CREW</th><th>SECTION</th><th>SHIFT</th><th>JAM MULAI</th><th>JAM SELESAI</th><th>STATUS</th></tr></thead><tbody id="reportRows"><tr><td colspan="8">Pilih tanggal lalu tekan TAMPILKAN.</td></tr></tbody></table>
+        </div>
+        <div class="dash-small" id="reportMeta" style="margin-top:10px"></div>
+      </div>
     </section>
 
     <section class="card">
@@ -149,10 +196,12 @@
       </ul>
     </section>
 
-    <div class="footer">CREW BREAK MONITORING V2.0 · ASIA/JAKARTA · DYNAMIC QR</div>
+    <div class="footer">CREW BREAK MONITORING V2.2 · ASIA/JAKARTA · DYNAMIC QR</div>
   </main>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script>
 (function () {
   "use strict";
@@ -379,6 +428,83 @@
 
   nikInput.addEventListener("input", () => {
     nikInput.value = nikInput.value.toUpperCase().replace(/\s+/g, "");
+  });
+
+  let managerSessionToken = "";
+  let currentReport = null;
+  const managerNotice = el("managerNotice");
+  const reportNotice = el("reportNotice");
+  function managerMessage(target, message, type) {
+    target.textContent = message || "";
+    target.className = "notice show " + (type || "info");
+  }
+  function yesterdayJakarta() {
+    const now = new Date();
+    const local = new Date(now.toLocaleString("en-US", { timeZone:"Asia/Jakarta" }));
+    local.setDate(local.getDate() - 1);
+    const y = local.getFullYear(), m = String(local.getMonth()+1).padStart(2,"0"), d = String(local.getDate()).padStart(2,"0");
+    return y + "-" + m + "-" + d;
+  }
+  el("reportDate").value = yesterdayJakarta();
+  el("managerLoginBtn").addEventListener("click", async () => {
+    const pin = el("managerPin").value;
+    if (!pin) { managerMessage(managerNotice, "Masukkan PIN Dashboard Manager.", "error"); return; }
+    el("managerLoginBtn").disabled = true;
+    try {
+      const data = await jsonp({ action:"managerLogin", pin:pin });
+      if (!data || !data.success) throw new Error(data && data.message ? data.message : "Login gagal.");
+      managerSessionToken = data.sessionToken;
+      el("managerLoginBox").style.display = "none";
+      el("managerReport").style.display = "block";
+      await loadManagerReport();
+    } catch (err) { managerMessage(managerNotice, err.message, "error"); }
+    finally { el("managerLoginBtn").disabled = false; }
+  });
+  async function loadManagerReport() {
+    if (!managerSessionToken) return;
+    const date = el("reportDate").value;
+    if (!date) { managerMessage(reportNotice, "Pilih tanggal operasional.", "error"); return; }
+    el("refreshReportBtn").disabled = true;
+    managerMessage(reportNotice, "Mengambil jadwal dan BREAK LOG...", "info");
+    try {
+      const data = await jsonp({ action:"managerDashboard", sessionToken:managerSessionToken, date:date, storeCode:el("reportStore").value });
+      if (!data || !data.success) throw new Error(data && data.message ? data.message : "Gagal mengambil laporan.");
+      currentReport = data;
+      const c = data.counts;
+      el("kScheduled").textContent = c.scheduled;
+      el("kAbsent").textContent = c.absent;
+      el("kIncomplete").textContent = c.incomplete;
+      el("kAnomaly").textContent = c.anomaly;
+      el("kComplete").textContent = c.complete;
+      const tbody = el("reportRows"); tbody.innerHTML = "";
+      if (!data.rows.length) { tbody.innerHTML = '<tr><td colspan="8">Tidak ada crew dengan jadwal shift pada tanggal ini.</td></tr>'; }
+      data.rows.forEach(row => {
+        const tr = document.createElement("tr");
+        [row.store, row.nik, row.name, row.section, row.shift, row.start || "-", row.end || "-"].forEach(value => { const td=document.createElement("td"); td.textContent=value; tr.appendChild(td); });
+        const td=document.createElement("td"); const tag=document.createElement("span"); tag.className="status-tag " + (row.status === "LENGKAP" ? "good" : (row.status === "POTENSI MANGKIR" || row.status === "DATA TIDAK LENGKAP" || row.status === "DATA DUPLIKAT" ? "bad" : "warn")); tag.textContent=row.status; td.appendChild(tag); tr.appendChild(td); tbody.appendChild(tr);
+      });
+      managerMessage(reportNotice, "Rekap berhasil dimuat.", "success");
+      el("reportMeta").textContent = "Tanggal operasional: " + date + " · Diperbarui: " + data.generatedAt + " · Sumber: jadwal kerja dan BREAK LOG.";
+    } catch (err) { managerMessage(reportNotice, err.message, "error"); }
+    finally { el("refreshReportBtn").disabled = false; }
+  }
+  el("refreshReportBtn").addEventListener("click", loadManagerReport);
+  el("managerLogoutBtn").addEventListener("click", () => {
+    managerSessionToken=""; currentReport=null; el("managerPin").value="";
+    el("managerReport").style.display="none"; el("managerLoginBox").style.display="block";
+    managerMessage(managerNotice, "Kamu sudah keluar dari Dashboard Manager.", "info");
+  });
+  el("exportPdfBtn").addEventListener("click", () => {
+    if (!currentReport) { managerMessage(reportNotice, "Tampilkan laporan terlebih dahulu.", "error"); return; }
+    if (!window.jspdf || !window.jspdf.jsPDF) { managerMessage(reportNotice, "Modul PDF belum termuat. Periksa koneksi internet lalu muat ulang halaman.", "error"); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:"landscape", unit:"mm", format:"a4" });
+    doc.setFontSize(16); doc.text("CREW BREAK MONITORING - REKAP ABSENSI", 14, 15);
+    doc.setFontSize(10); doc.text("Tanggal Operasional: " + currentReport.date + " | Store: " + (el("reportStore").selectedOptions[0].textContent || "Semua Store"), 14, 22);
+    const c=currentReport.counts;
+    doc.text("Terjadwal: " + c.scheduled + "   Potensi Mangkir: " + c.absent + "   Belum Selesai: " + c.incomplete + "   Anomali: " + c.anomaly + "   Lengkap: " + c.complete, 14, 29);
+    doc.autoTable({ startY:35, head:[["STORE","NIK","NAMA CREW","SECTION","SHIFT","JAM MULAI","JAM SELESAI","STATUS","KETERANGAN"]], body:currentReport.rows.map(r=>[r.store,r.nik,r.name,r.section,r.shift,r.start||"-",r.end||"-",r.status,r.note]), styles:{fontSize:7,cellPadding:2}, headStyles:{fillColor:[23,43,89]}, margin:{left:10,right:10} });
+    doc.save("Rekap_Crew_Break_" + currentReport.date + ".pdf");
   });
 
   loadHealth();
