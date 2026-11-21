@@ -1,574 +1,263 @@
-/****************************************************
- * CREW BREAK MONITORING V1.0
- * FULL Code.gs - FOUNDATION + QR ENGINE
- * PILOT: C17 - SSS MENTENG
- * TIMEZONE: Asia/Jakarta
- ****************************************************/
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172554">
+<title>Crew Break Monitoring | SSS Menteng</title>
+<style>
+:root{--navy:#172554;--blue:#2563eb;--green:#15803d;--red:#b91c1c;--bg:#f3f6fc;--ink:#172033;--muted:#64748b;--line:#dce4ef}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.shell{max-width:1040px;margin:auto;padding:16px}.hero{background:linear-gradient(125deg,#172554,#2563eb);border-radius:22px;color:#fff;padding:24px;box-shadow:0 12px 30px #17255420}
+.kicker{font-size:11px;letter-spacing:1.5px;font-weight:800;opacity:.8}h1{font-size:clamp(23px,4vw,34px);line-height:1.2;margin:8px 0}.subtitle{opacity:.85;margin:0}
+.pill{display:inline-block;margin-top:14px;border-radius:30px;background:#ffffff25;padding:7px 13px;font-size:12px;font-weight:750}
+.tabs{display:flex;gap:8px;margin:16px 0}.tab{flex:1;border:1px solid var(--line);background:#fff;color:var(--navy);padding:12px;border-radius:12px;font-weight:800;cursor:pointer}.tab.active{background:var(--navy);color:#fff}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 4px 15px #152b4b08}
+h2{font-size:18px;margin:0 0 12px}h3{font-size:15px;margin:0 0 8px}.muted{color:var(--muted)}.small{font-size:12px}
+label{display:block;font-size:12px;font-weight:800;margin:13px 0 6px}input,select{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:12px;font:inherit;background:#fff;color:var(--ink)}
+input:focus,select:focus{outline:3px solid #93c5fd88;border-color:var(--blue)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.btn{border:0;color:#fff;font-weight:800;border-radius:12px;padding:14px 12px;width:100%}.green{background:var(--green)}.red{background:var(--red)}.blue{background:var(--blue)}.outline{border:1px solid #cbd5e1;background:#fff;color:var(--navy)}
+.notice{padding:12px;border-radius:12px;margin-top:14px;white-space:pre-line;display:none}.notice.info{display:block;background:#eff6ff;color:#1e40af}.notice.error{display:block;background:#fef2f2;color:#991b1b}.notice.ok{display:block;background:#f0fdf4;color:#166534}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{border-radius:14px;background:#f1f5f9;padding:13px}.metric b{font-size:26px;display:block}.metric span{font-size:11px;color:var(--muted)}
+.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px;min-width:640px}th,td{text-align:left;padding:11px;border-bottom:1px solid var(--line)}th{background:#f8fafc;white-space:nowrap}
+.tag{border-radius:20px;padding:4px 8px;font-size:11px;font-weight:800;background:#e2e8f0}.tag.over{background:#fee2e2;color:#991b1b}.tag.ok{background:#dcfce7;color:#166534}
+.hidden{display:none!important}.foot{text-align:center;color:var(--muted);font-size:11px;padding:12px}
+@media(max-width:620px){.metrics{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.card{padding:16px}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header class="hero">
+  <div class="kicker">STORE OPERATIONS CONTROL SYSTEM</div>
+  <h1>CREW BREAK MONITORING</h1>
+  <p class="subtitle">Absensi istirahat digital & monitoring kedisiplinan</p>
+  <span class="pill">SSS MENTENG · C17 · STANDAR 60 MENIT</span>
+</header>
+<nav class="tabs" aria-label="Menu"><button class="tab active" id="tabCrew" type="button">ABSENSI CREW</button><button class="tab" id="tabManager" type="button">DASHBOARD MANAGER</button></nav>
 
-const CBM = {
-  VERSION: "1.0",
-  TIMEZONE: "Asia/Jakarta",
-  BREAK_LIMIT: 60,
-  PILOT_STORE: "C17",
-  SHEETS: {
-    CREW: "MASTER CREW",
-    STORE: "MASTER STORE",
-    LOG: "BREAK LOG",
-    SUMMARY: "BREAK SUMMARY",
-    SETTING: "SETTING",
-    AUDIT: "AUDIT LOG",
-    ACCESS: "CREW ACCESS",
-    QR: "STORE QR"
-  }
+<section id="crewPanel">
+ <div class="card">
+  <h2>Scan QR Istirahat</h2>
+  <p class="muted small">Scan QR resmi C17 untuk membuka halaman ini dengan token store. QR harus dibuka dari kamera HP. Token tidak ditampilkan di layar.</p>
+  <div id="qrState" class="notice info"></div>
+  <label for="nik">NIK CREW</label>
+  <input id="nik" autocomplete="username" placeholder="Masukkan NIK" maxlength="40">
+  <label for="pin">PIN 6 DIGIT</label>
+  <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Masukkan PIN" maxlength="6">
+  <div class="grid2" style="margin-top:18px">
+    <button class="btn green" id="startBtn" type="button">MULAI ISTIRAHAT</button>
+    <button class="btn red" id="endBtn" type="button">SELESAI ISTIRAHAT</button>
+  </div>
+  <div id="crewMessage" class="notice" role="status"></div>
+ </div>
+ <div class="card"><h3>Ketentuan</h3><p class="muted small">Satu sesi per crew per tanggal. Waktu dihitung oleh server, bukan jam HP. Scan kembali untuk mengakhiri istirahat. Jika ada kendala, laporkan kepada PIC agar dilakukan verifikasi.</p></div>
+</section>
+
+<section id="managerPanel" class="hidden">
+ <div class="card">
+  <h2>Akses Manager Store</h2>
+  <p class="muted small">Dashboard hanya boleh dibuka oleh pengguna yang diberi izin di backend. PIN crew tidak memberikan akses manager.</p>
+  <label for="managerUser">ID / Email Manager</label><input id="managerUser" autocomplete="username" placeholder="Akun manager">
+  <label for="managerPassword">Kata Sandi Manager</label><input id="managerPassword" type="password" autocomplete="current-password" placeholder="Kata sandi">
+  <button class="btn blue" id="managerLogin" type="button" style="margin-top:14px">LOGIN & MUAT DATA</button>
+  <div id="managerMessage" class="notice" role="status"></div>
+ </div>
+ <div id="dashboard" class="hidden">
+  <div class="card">
+   <div class="grid2">
+    <div><label for="period">Periode</label><input type="month" id="period"></div>
+    <div style="align-self:end"><button class="btn outline" id="refresh" type="button">REFRESH DATA</button></div>
+  </div>
+  </div>
+  <div class="card"><div class="metrics">
+    <div class="metric"><b id="mTotal">0</b><span>Total sesi</span></div>
+    <div class="metric"><b id="mOnTime">0</b><span>Tepat waktu</span></div>
+    <div class="metric"><b id="mOver">0</b><span>Over break</span></div>
+    <div class="metric"><b id="mActive">0</b><span>Belum selesai</span></div>
+  </div></div>
+  <div class="card"><h2>Ranking Keterlambatan</h2><div class="tablewrap"><table><thead><tr><th>Crew</th><th>NIK</th><th>Frekuensi Over</th><th>Total Over (menit)</th></tr></thead><tbody id="rankingRows"></tbody></table></div></div>
+  <div class="card"><h2>Riwayat Istirahat</h2><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Mulai</th><th>Selesai</th><th>Durasi</th><th>Over</th><th>Status</th></tr></thead><tbody id="logRows"></tbody></table></div></div>
+ </div>
+</section>
+<div class="foot">CREW BREAK MONITORING V1.0 · PILOT SSS MENTENG</div>
+</main>
+<script>
+"use strict";
+/*
+  KONFIGURASI:
+  Isi URL endpoint HTTPS milik API bridge yang mengembalikan JSON.
+  GitHub Pages tidak dapat memanggil google.script.run.
+  Endpoint ini harus menangani CORS dan meneruskan request secara aman
+  ke Google Apps Script. Backend wajib memvalidasi token dan otorisasi.
+  Jangan menaruh API secret, PIN admin, atau token backend di file ini.
+*/
+const CONFIG = {
+  API_URL: "ISI_URL_API_BRIDGE_HTTPS_DI_SINI",
+  STORE_CODE: "C17",
+  BREAK_LIMIT: 60
 };
 
-/* ==================== MENU ==================== */
+const $ = id => document.getElementById(id);
+const storeToken = new URLSearchParams(location.search).get("token") || "";
+let managerSession = "";
+let isBusy = false;
 
-function onOpen() {
-  SpreadsheetApp.getUi()
-    .createMenu("CREW BREAK MONITORING")
-    .addItem("Setup Database", "setupDatabase")
-    .addItem("Validasi Master Crew", "validateMasterCrew")
-    .addSeparator()
-    .addItem("Setup QR Engine C17", "setupC17Engine")
-    .addItem("Registrasi / Reset PIN Crew", "adminSetCrewPinPrompt")
-    .addToUi();
+function configured() {
+  return /^https:\/\//i.test(CONFIG.API_URL);
+}
+function notice(id, kind, text) {
+  const node = $(id);
+  node.className = "notice " + kind;
+  node.textContent = text;
+}
+function showPanel(name) {
+  const manager = name === "manager";
+  $("crewPanel").classList.toggle("hidden", manager);
+  $("managerPanel").classList.toggle("hidden", !manager);
+  $("tabCrew").classList.toggle("active", !manager);
+  $("tabManager").classList.toggle("active", manager);
+}
+$("tabCrew").addEventListener("click", () => showPanel("crew"));
+$("tabManager").addEventListener("click", () => showPanel("manager"));
+
+if (!storeToken) {
+  notice("qrState", "error", "Token QR belum ada. Scan QR resmi store C17 terlebih dahulu.");
+} else {
+  notice("qrState", "ok", "QR terdeteksi. Silakan isi NIK dan PIN.");
+}
+if (!configured()) {
+  notice("crewMessage", "info", "Website belum terhubung ke backend. Admin perlu mengisi CONFIG.API_URL setelah API bridge siap.");
 }
 
-/* ==================== FOUNDATION ==================== */
-
-function setupDatabase() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.setSpreadsheetTimeZone(CBM.TIMEZONE);
-
-  const structures = [
-    { name: CBM.SHEETS.CREW, headers: ["AREA MANAGER", "NAMA CREW", "NIK", "STORE", "SECTION", "STATUS"] },
-    { name: CBM.SHEETS.STORE, headers: ["STORE CODE", "STORE NAME", "AREA MANAGER", "STATUS"] },
-    { name: CBM.SHEETS.LOG, headers: ["ID TRANSAKSI", "TANGGAL", "NIK", "NAMA CREW", "STORE ASAL", "STORE BERTUGAS", "AM ASAL", "AM STORE BERTUGAS", "SECTION", "JAM MULAI", "JAM SELESAI", "DURASI MENIT", "OVER MINUTES", "STATUS", "KETERANGAN"] },
-    { name: CBM.SHEETS.SUMMARY, headers: ["PERIODE", "NIK", "NAMA CREW", "STORE ASAL", "TOTAL ISTIRAHAT", "TEPAT WAKTU", "OVER BREAK", "BELUM SELESAI", "TOTAL OVER MENIT", "RATA-RATA DURASI", "STATUS EVALUASI"] },
-    { name: CBM.SHEETS.SETTING, headers: ["PARAMETER", "VALUE", "KETERANGAN"] },
-    { name: CBM.SHEETS.AUDIT, headers: ["TIMESTAMP", "USER", "AKSI", "ID TRANSAKSI", "STORE", "KETERANGAN"] }
-  ];
-
-  structures.forEach(function(item) {
-    const sh = getOrCreateSheet_(ss, item.name);
-    sh.getRange(1, 1, 1, item.headers.length).setValues([item.headers]);
-    formatHeader_(sh, item.headers.length);
-    sh.setFrozenRows(1);
-    sh.setTabColor("#2563EB");
+async function callApi(payload) {
+  if (!configured()) throw new Error("URL API belum dikonfigurasi.");
+  const response = await fetch(CONFIG.API_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload),
+    cache: "no-store",
+    redirect: "follow"
   });
-
-  setupSettings_(ss);
-  setupCrewValidation_(ss);
-  setupLogFormatting_(ss);
-  setupSummaryFormatting_(ss);
-  setupAuditFormatting_(ss);
-  setupStoreFormatting_(ss);
-  SpreadsheetApp.flush();
-
-  SpreadsheetApp.getUi().alert(
-    "DATABASE BERHASIL DIBUAT",
-    "Foundation database siap. Standar istirahat 60 menit. Timezone Asia/Jakarta.",
-    SpreadsheetApp.getUi().ButtonSet.OK
-  );
+  if (!response.ok) throw new Error("API HTTP " + response.status);
+  const data = await response.json();
+  if (!data || typeof data !== "object") throw new Error("Respons API tidak valid.");
+  return data;
 }
 
-function getOrCreateSheet_(ss, name) {
-  return ss.getSheetByName(name) || ss.insertSheet(name);
-}
+async function submitBreak(action) {
+  if (isBusy) return;
+  const nik = $("nik").value.trim().toUpperCase();
+  const pin = $("pin").value.trim();
+  if (!storeToken) return notice("crewMessage", "error", "Scan QR resmi C17 terlebih dahulu.");
+  if (!nik) return notice("crewMessage", "error", "Masukkan NIK crew.");
+  if (!/^\d{6}$/.test(pin)) return notice("crewMessage", "error", "PIN harus 6 digit angka.");
 
-function formatHeader_(sheet, totalColumns) {
-  sheet.getRange(1, 1, 1, totalColumns)
-    .setBackground("#17365D")
-    .setFontColor("#FFFFFF")
-    .setFontWeight("bold")
-    .setHorizontalAlignment("center")
-    .setVerticalAlignment("middle")
-    .setWrap(true);
-  sheet.setRowHeight(1, 42);
-}
-
-function setupSettings_(ss) {
-  const sh = ss.getSheetByName(CBM.SHEETS.SETTING);
-  const defaults = [
-    ["BREAK_LIMIT_MINUTES", 60, "Standar maksimal istirahat dalam menit"],
-    ["TIMEZONE", CBM.TIMEZONE, "Zona waktu sistem"],
-    ["MAX_BREAK_PER_DAY", 1, "Maksimal satu sesi per crew per tanggal"],
-    ["ALLOW_CROSS_STORE", true, "Crew boleh scan di store penugasan"],
-    ["REQUIRE_PIN", true, "Crew wajib menggunakan PIN"],
-    ["INCOMPLETE_STATUS", "BELUM SELESAI", "Sesi yang belum ditutup"],
-    ["ONTIME_STATUS", "TEPAT WAKTU", "Durasi maksimal 60 menit"],
-    ["OVER_STATUS", "OVER BREAK", "Durasi melebihi 60 menit"]
-  ];
-  if (sh.getLastRow() <= 1) {
-    sh.getRange(2, 1, defaults.length, 3).setValues(defaults);
-  }
-  sh.setColumnWidth(1, 230);
-  sh.setColumnWidth(2, 180);
-  sh.setColumnWidth(3, 380);
-}
-
-function setupCrewValidation_(ss) {
-  const sh = ss.getSheetByName(CBM.SHEETS.CREW);
-  const rule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(["ACTIVE", "NONACTIVE"], true)
-    .setAllowInvalid(false)
-    .build();
-  sh.getRange("F2:F").setDataValidation(rule);
-  sh.getRange("C:C").setNumberFormat("@");
-  [170, 200, 140, 180, 120, 120].forEach(function(w, i) {
-    sh.setColumnWidth(i + 1, w);
-  });
-}
-
-function setupLogFormatting_(ss) {
-  const sh = ss.getSheetByName(CBM.SHEETS.LOG);
-  const widths = [190, 110, 130, 190, 160, 160, 150, 170, 110, 110, 110, 120, 120, 150, 250];
-  widths.forEach(function(w, i) { sh.setColumnWidth(i + 1, w); });
-  sh.getRange("B:B").setNumberFormat("dd/MM/yyyy");
-  sh.getRange("C:C").setNumberFormat("@");
-  sh.getRange("J:K").setNumberFormat("HH:mm:ss");
-  sh.getRange("L:M").setNumberFormat("0");
-}
-
-function setupSummaryFormatting_(ss) {
-  const sh = ss.getSheetByName(CBM.SHEETS.SUMMARY);
-  sh.setColumnWidth(1, 120);
-  sh.setColumnWidth(2, 130);
-  sh.setColumnWidth(3, 190);
-  sh.setColumnWidths(4, 8, 140);
-}
-
-function setupAuditFormatting_(ss) {
-  const sh = ss.getSheetByName(CBM.SHEETS.AUDIT);
-  [180, 200, 150, 190, 160, 350].forEach(function(w, i) {
-    sh.setColumnWidth(i + 1, w);
-  });
-  sh.getRange("A:A").setNumberFormat("dd/MM/yyyy HH:mm:ss");
-}
-
-function setupStoreFormatting_(ss) {
-  const sh = ss.getSheetByName(CBM.SHEETS.STORE);
-  [140, 200, 180, 120].forEach(function(w, i) {
-    sh.setColumnWidth(i + 1, w);
-  });
-  const rule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(["ACTIVE", "NONACTIVE"], true)
-    .setAllowInvalid(false)
-    .build();
-  sh.getRange("D2:D").setDataValidation(rule);
-}
-
-/* ==================== MASTER VALIDATION ==================== */
-
-function validateMasterCrew() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sh = ss.getSheetByName(CBM.SHEETS.CREW);
-  if (!sh) {
-    SpreadsheetApp.getUi().alert("Sheet MASTER CREW belum tersedia.");
-    return;
-  }
-
-  const last = sh.getLastRow();
-  if (last < 2) {
-    SpreadsheetApp.getUi().alert("MASTER CREW masih kosong.");
-    return;
-  }
-
-  const data = sh.getRange(2, 1, last - 1, 6).getDisplayValues();
-  const seen = new Set();
-  const duplicates = [];
-  const incomplete = [];
-
-  data.forEach(function(r, index) {
-    const line = index + 2;
-    const nik = String(r[2] || "").trim().toUpperCase();
-    if (!r[1] || !nik || !r[3] || !r[5]) {
-      incomplete.push("Baris " + line + ": data wajib belum lengkap");
-    }
-    if (nik && seen.has(nik)) duplicates.push(nik);
-    if (nik) seen.add(nik);
-  });
-
-  let msg = "HASIL VALIDASI MASTER CREW\n\n" +
-    "Total data: " + data.length +
-    "\nNIK duplikat: " + duplicates.length +
-    "\nData tidak lengkap: " + incomplete.length;
-
-  if (duplicates.length) msg += "\n\nNIK duplikat:\n" + Array.from(new Set(duplicates)).join(", ");
-  if (incomplete.length) msg += "\n\n" + incomplete.slice(0, 10).join("\n");
-  SpreadsheetApp.getUi().alert(msg);
-}
-
-/* ==================== QR ENGINE SETUP ==================== */
-
-function setupC17Engine() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const access = getOrCreateSheet_(ss, CBM.SHEETS.ACCESS);
-  const qr = getOrCreateSheet_(ss, CBM.SHEETS.QR);
-
-  setupEngineHeader_(access, ["NIK", "PIN HASH", "SALT", "STATUS", "CREATED AT"]);
-  setupEngineHeader_(qr, ["STORE CODE", "STORE NAME", "QR TOKEN", "STATUS", "CREATED AT"]);
-
-  access.setColumnWidths(1, 5, 180);
-  qr.setColumnWidths(1, 5, 200);
-
-  const store = findStore_(CBM.PILOT_STORE);
-  if (!store) {
-    throw new Error("Store C17 tidak ditemukan atau tidak aktif di MASTER STORE.");
-  }
-
-  const rows = qr.getLastRow() > 1
-    ? qr.getRange(2, 1, qr.getLastRow() - 1, 5).getDisplayValues()
-    : [];
-
-  const exists = rows.some(function(r) {
-    return r[0] === CBM.PILOT_STORE &&
-      r[2] &&
-      String(r[3]).toUpperCase() === "ACTIVE";
-  });
-
-  if (!exists) {
-    qr.appendRow([
-      store.code,
-      store.name,
-      Utilities.getUuid().replace(/-/g, ""),
-      "ACTIVE",
-      new Date()
-    ]);
-  }
-
-  SpreadsheetApp.getUi().alert(
-    "QR ENGINE BERHASIL DISETUP",
-    "Store: " + store.name + "\nKode: " + store.code +
-    "\nSheet CREW ACCESS dan STORE QR sudah tersedia.",
-    SpreadsheetApp.getUi().ButtonSet.OK
-  );
-}
-
-function setupEngineHeader_(sheet, headers) {
-  sheet.getRange(1, 1, 1, headers.length)
-    .setValues([headers])
-    .setBackground("#17365D")
-    .setFontColor("#FFFFFF")
-    .setFontWeight("bold")
-    .setHorizontalAlignment("center");
-  sheet.setFrozenRows(1);
-}
-
-/* ==================== PIN REGISTRATION ==================== */
-
-function adminSetCrewPinPrompt() {
-  const ui = SpreadsheetApp.getUi();
-  const nikResponse = ui.prompt(
-    "REGISTRASI PIN CREW",
-    "Masukkan NIK crew:",
-    ui.ButtonSet.OK_CANCEL
-  );
-  if (nikResponse.getSelectedButton() !== ui.Button.OK) return;
-
-  const nik = nikResponse.getResponseText().trim().toUpperCase();
-  const crew = findCrew_(nik);
-  if (!crew) {
-    ui.alert("NIK tidak ditemukan atau crew tidak aktif.");
-    return;
-  }
-
-  const pinResponse = ui.prompt(
-    "BUAT PIN",
-    "Masukkan PIN 6 digit untuk " + crew.name + ":",
-    ui.ButtonSet.OK_CANCEL
-  );
-  if (pinResponse.getSelectedButton() !== ui.Button.OK) return;
-
-  const pin = pinResponse.getResponseText().trim();
-  if (!/^\d{6}$/.test(pin)) {
-    ui.alert("PIN harus terdiri dari 6 digit angka.");
-    return;
-  }
-
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CBM.SHEETS.ACCESS);
-  const salt = Utilities.getUuid();
-  const row = [nik, hashPin_(pin, salt), salt, "ACTIVE", new Date()];
-  const values = sh.getDataRange().getDisplayValues();
-
-  let foundRow = 0;
-  for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0]).trim().toUpperCase() === nik) {
-      foundRow = i + 1;
-      break;
-    }
-  }
-
-  if (foundRow) {
-    sh.getRange(foundRow, 1, 1, row.length).setValues([row]);
-  } else {
-    sh.appendRow(row);
-  }
-
-  auditEngine_("REGISTRASI / RESET PIN", "", crew.store, "PIN diperbarui untuk NIK " + nik);
-  ui.alert("PIN berhasil didaftarkan untuk " + crew.name + ".");
-}
-
-function hashPin_(pin, salt) {
-  const bytes = Utilities.computeDigest(
-    Utilities.DigestAlgorithm.SHA_256,
-    salt + "|" + String(pin),
-    Utilities.Charset.UTF_8
-  );
-  return bytes.map(function(b) {
-    return ("0" + ((b + 256) % 256).toString(16)).slice(-2);
-  }).join("");
-}
-
-function validatePin_(nik, pin) {
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CBM.SHEETS.ACCESS);
-  if (!sh || sh.getLastRow() < 2) return false;
-
-  const rows = sh.getDataRange().getDisplayValues();
-  const target = String(nik).trim().toUpperCase();
-
-  for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    if (String(r[0]).trim().toUpperCase() === target &&
-        String(r[3]).toUpperCase() === "ACTIVE") {
-      return hashPin_(pin, r[2]) === r[1];
-    }
-  }
-  return false;
-}
-
-/* ==================== MASTER LOOKUPS ==================== */
-
-function findCrew_(nik) {
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CBM.SHEETS.CREW);
-  if (!sh || sh.getLastRow() < 2) return null;
-
-  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 6).getDisplayValues();
-  const target = String(nik).trim().toUpperCase();
-
-  for (const r of rows) {
-    if (String(r[2]).trim().toUpperCase() === target &&
-        String(r[5]).trim().toUpperCase() === "ACTIVE") {
-      return {
-        am: r[0].trim(),
-        name: r[1].trim(),
-        nik: r[2].trim(),
-        store: r[3].trim(),
-        section: r[4].trim()
-      };
-    }
-  }
-  return null;
-}
-
-function findStore_(code) {
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CBM.SHEETS.STORE);
-  if (!sh || sh.getLastRow() < 2) return null;
-
-  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 4).getDisplayValues();
-  const target = String(code).trim().toUpperCase();
-
-  for (const r of rows) {
-    if (String(r[0]).trim().toUpperCase() === target &&
-        String(r[3]).trim().toUpperCase() === "ACTIVE") {
-      return { code: r[0].trim(), name: r[1].trim(), am: r[2].trim() };
-    }
-  }
-  return null;
-}
-
-function normalizeText_(value) {
-  return String(value || "").trim().toUpperCase().replace(/\s+/g, " ");
-}
-
-function findStoreByToken_(token) {
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CBM.SHEETS.QR);
-  if (!sh || sh.getLastRow() < 2) return null;
-
-  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 5).getDisplayValues();
-  for (const r of rows) {
-    if (r[2] === String(token) && String(r[3]).trim().toUpperCase() === "ACTIVE") {
-      return findStore_(r[0]);
-    }
-  }
-  return null;
-}
-
-/* ==================== START BREAK ==================== */
-
-function startBreak(token, nik, pin) {
-  const lock = LockService.getScriptLock();
-  if (!lock.tryLock(10000)) {
-    return { success: false, message: "Sistem sedang sibuk. Coba kembali." };
-  }
-
+  isBusy = true;
+  $("startBtn").disabled = $("endBtn").disabled = true;
+  notice("crewMessage", "info", "Memproses transaksi...");
   try {
-    const store = findStoreByToken_(token);
-    if (!store) return { success: false, message: "QR Store tidak valid." };
-
-    const normalizedNik = String(nik || "").trim().toUpperCase();
-    const crew = findCrew_(normalizedNik);
-    if (!crew) return { success: false, message: "NIK tidak ditemukan atau tidak aktif." };
-    if (!validatePin_(normalizedNik, pin)) return { success: false, message: "PIN tidak sesuai." };
-
-    const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CBM.SHEETS.LOG);
-    if (!sh) return { success: false, message: "BREAK LOG tidak ditemukan." };
-
-    const now = new Date();
-    const today = Utilities.formatDate(now, CBM.TIMEZONE, "yyyy-MM-dd");
-    const last = sh.getLastRow();
-    let dailyCount = 0;
-
-    if (last >= 2) {
-      const rows = sh.getRange(2, 1, last - 1, 15).getValues();
-
-      for (const r of rows) {
-        if (String(r[2]).trim().toUpperCase() !== normalizedNik) continue;
-
-        if (r[10] === "" || r[10] === null) {
-          return { success: false, message: "Masih ada sesi istirahat yang belum selesai." };
-        }
-
-        const logDate = r[1] instanceof Date
-          ? Utilities.formatDate(r[1], CBM.TIMEZONE, "yyyy-MM-dd")
-          : String(r[1]).trim();
-
-        if (logDate === today) dailyCount++;
-      }
+    const result = await callApi({
+      action: action === "start" ? "startBreak" : "endBreak",
+      storeCode: CONFIG.STORE_CODE, token: storeToken, nik, pin
+    });
+    if (!result.success) throw new Error(result.message || "Transaksi ditolak.");
+    const lines = [result.message || "Transaksi berhasil", "Crew: " + (result.name || nik)];
+    if (action === "start") {
+      lines.push("Store: " + (result.store || "SSS MENTENG"));
+      lines.push("Mulai: " + (result.startTime || "-"));
+    } else {
+      lines.push("Selesai: " + (result.finishTime || "-"));
+      lines.push("Durasi: " + result.duration + " menit");
+      lines.push("Kelebihan: " + result.over + " menit");
+      lines.push("Status: " + (result.status || "-"));
     }
-
-    if (dailyCount >= 1) {
-      return { success: false, message: "Crew sudah menggunakan jatah istirahat hari ini." };
-    }
-
-    const id = "BRK-" +
-      Utilities.formatDate(now, CBM.TIMEZONE, "yyyyMMdd-HHmmss") +
-      "-" + Utilities.getUuid().slice(0, 6).toUpperCase();
-
-    const dateOnly = new Date(today + "T00:00:00+07:00");
-
-    sh.appendRow([
-      id, dateOnly, crew.nik, crew.name, crew.store, store.name,
-      crew.am, store.am, crew.section, now, "", "", "",
-      "SEDANG ISTIRAHAT", ""
-    ]);
-
-    auditEngine_("MULAI ISTIRAHAT", id, store.name, crew.nik + " - " + crew.name);
-
-    return {
-      success: true,
-      message: "Istirahat berhasil dimulai.",
-      transactionId: id,
-      name: crew.name,
-      store: store.name,
-      startTime: Utilities.formatDate(now, CBM.TIMEZONE, "HH:mm:ss")
-    };
-
-  } catch (err) {
-    console.error(err);
-    return { success: false, message: "Terjadi kesalahan: " + err.message };
+    notice("crewMessage", "ok", lines.join("\n"));
+    $("pin").value = "";
+  } catch (error) {
+    notice("crewMessage", "error", error.message || "Gagal menghubungi server.");
   } finally {
-    lock.releaseLock();
+    isBusy = false;
+    $("startBtn").disabled = $("endBtn").disabled = false;
   }
 }
+$("startBtn").addEventListener("click", () => submitBreak("start"));
+$("endBtn").addEventListener("click", () => submitBreak("end"));
 
-/* ==================== END BREAK ==================== */
+function putText(id, value) { $(id).textContent = String(value); }
+function addCell(tr, text) {
+  const td = document.createElement("td");
+  td.textContent = text == null ? "" : String(text);
+  tr.appendChild(td);
+}
+function clearTable(id) { $(id).replaceChildren(); }
+function addEmpty(id, count) {
+  const tr = document.createElement("tr");
+  const td = document.createElement("td");
+  td.colSpan = count;
+  td.textContent = "Belum ada data pada periode ini.";
+  tr.appendChild(td);
+  $(id).appendChild(tr);
+}
+function renderDashboard(data) {
+  const metrics = data.metrics || {};
+  putText("mTotal", metrics.total ?? 0);
+  putText("mOnTime", metrics.onTime ?? 0);
+  putText("mOver", metrics.over ?? 0);
+  putText("mActive", metrics.active ?? 0);
 
-function endBreak(token, nik, pin) {
-  const lock = LockService.getScriptLock();
-  if (!lock.tryLock(10000)) {
-    return { success: false, message: "Sistem sedang sibuk. Coba kembali." };
-  }
+  clearTable("rankingRows");
+  const ranking = Array.isArray(data.ranking) ? data.ranking : [];
+  ranking.forEach(r => {
+    const tr = document.createElement("tr");
+    [r.name, r.nik, r.overCount, r.overMinutes].forEach(x => addCell(tr, x));
+    $("rankingRows").appendChild(tr);
+  });
+  if (!ranking.length) addEmpty("rankingRows", 4);
 
+  clearTable("logRows");
+  const logs = Array.isArray(data.logs) ? data.logs : [];
+  logs.forEach(r => {
+    const tr = document.createElement("tr");
+    [r.date, r.name, r.start, r.end, r.duration, r.over, r.status].forEach(x => addCell(tr, x));
+    $("logRows").appendChild(tr);
+  });
+  if (!logs.length) addEmpty("logRows", 7);
+}
+async function loadDashboard() {
+  if (!managerSession) return notice("managerMessage", "error", "Login manager terlebih dahulu.");
+  notice("managerMessage", "info", "Memuat data store...");
   try {
-    const store = findStoreByToken_(token);
-    if (!store) return { success: false, message: "QR Store tidak valid." };
-
-    const normalizedNik = String(nik || "").trim().toUpperCase();
-    const crew = findCrew_(normalizedNik);
-    if (!crew) return { success: false, message: "NIK tidak ditemukan atau tidak aktif." };
-    if (!validatePin_(normalizedNik, pin)) return { success: false, message: "PIN tidak sesuai." };
-
-    const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CBM.SHEETS.LOG);
-    if (!sh || sh.getLastRow() < 2) {
-      return { success: false, message: "Belum ada transaksi istirahat." };
-    }
-
-    const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 15).getValues();
-    let targetRow = 0;
-    let startTime = null;
-    let startStore = "";
-
-    for (let i = rows.length - 1; i >= 0; i--) {
-      const r = rows[i];
-      if (String(r[2]).trim().toUpperCase() === normalizedNik &&
-          (r[10] === "" || r[10] === null)) {
-        targetRow = i + 2;
-        startTime = r[9];
-        startStore = String(r[5]).trim();
-        break;
-      }
-    }
-
-    if (!targetRow || !(startTime instanceof Date)) {
-      return { success: false, message: "Tidak ditemukan sesi istirahat aktif." };
-    }
-
-    if (normalizeText_(startStore) !== normalizeText_(store.name)) {
-      return { success: false, message: "Selesaikan istirahat melalui QR store tempat kamu memulai." };
-    }
-
-    const now = new Date();
-    const duration = Math.max(0, Math.floor((now.getTime() - startTime.getTime()) / 60000));
-    const over = Math.max(0, duration - CBM.BREAK_LIMIT);
-    const status = duration <= CBM.BREAK_LIMIT ? "TEPAT WAKTU" : "OVER BREAK";
-
-    sh.getRange(targetRow, 11, 1, 5).setValues([[
-      now, duration, over, status, ""
-    ]]);
-
-    const transactionId = sh.getRange(targetRow, 1).getValue();
-    auditEngine_("SELESAI ISTIRAHAT", transactionId, store.name, crew.nik + " - " + duration + " menit");
-
-    return {
-      success: true,
-      message: "Istirahat berhasil diselesaikan.",
-      name: crew.name,
-      duration: duration,
-      over: over,
-      status: status,
-      finishTime: Utilities.formatDate(now, CBM.TIMEZONE, "HH:mm:ss")
-    };
-
-  } catch (err) {
-    console.error(err);
-    return { success: false, message: "Terjadi kesalahan: " + err.message };
-  } finally {
-    lock.releaseLock();
+    const result = await callApi({
+      action: "managerDashboard",
+      session: managerSession,
+      storeCode: CONFIG.STORE_CODE,
+      period: $("period").value
+    });
+    if (!result.success) throw new Error(result.message || "Akses ditolak.");
+    renderDashboard(result);
+    $("dashboard").classList.remove("hidden");
+    notice("managerMessage", "ok", "Data berhasil diperbarui.");
+  } catch (error) {
+    notice("managerMessage", "error", error.message || "Gagal memuat dashboard.");
   }
 }
-
-/* ==================== AUDIT LOG ==================== */
-
-function auditEngine_(action, transactionId, store, detail) {
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CBM.SHEETS.AUDIT);
-  if (!sh) return;
-
-  let email = "SYSTEM";
+$("managerLogin").addEventListener("click", async () => {
+  const user = $("managerUser").value.trim();
+  const password = $("managerPassword").value;
+  if (!user || !password) return notice("managerMessage", "error", "Isi akun dan kata sandi manager.");
+  notice("managerMessage", "info", "Memverifikasi akses...");
   try {
-    email = Session.getActiveUser().getEmail() || "SYSTEM";
-  } catch (err) {
-    email = "SYSTEM";
+    const result = await callApi({action:"managerLogin",user,password,storeCode:CONFIG.STORE_CODE});
+    if (!result.success || !result.session) throw new Error(result.message || "Login ditolak.");
+    managerSession = result.session;
+    $("managerPassword").value = "";
+    await loadDashboard();
+  } catch (error) {
+    notice("managerMessage", "error", error.message || "Login gagal.");
   }
-
-  sh.appendRow([
-    new Date(),
-    email,
-    action,
-    transactionId || "",
-    store || "",
-    detail || ""
-  ]);
-}
-
+});
+$("refresh").addEventListener("click", loadDashboard);
+$("period").value = new Date().toLocaleDateString("sv-SE", {year:"numeric",month:"2-digit"}).slice(0,7);
+</script>
+</body>
+</html>
