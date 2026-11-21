@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#173b8f">
-  <title>Crew Break Monitoring V2.0</title>
+  <title>Crew Break Monitoring V2.1</title>
   <style>
     :root {
       --navy:#172b59; --blue:#2457d6; --blue2:#3977f6;
@@ -100,10 +100,18 @@
 
     <section class="card" id="crewPanel">
       <h2>Absensi Istirahat</h2>
-      <p class="intro">Pilih store tempat bertugas, masukkan NIK, lalu pilih mulai atau selesai istirahat.</p>
+      <p class="intro">Pindai QR dinamis pada layar store menggunakan kamera langsung, lalu masukkan NIK.</p>
+
+      <div id="scannerBox" style="margin:16px 0;padding:14px;border:1px solid #d9e2f1;border-radius:16px;background:#f8faff">
+        <h3 style="margin:0 0 8px">SCAN QR STORE</h3>
+        <p style="margin:0 0 12px;color:#65718b;font-size:13px">Pemindaian wajib melalui kamera. Tidak tersedia upload foto atau galeri.</p>
+        <div id="qr-reader" style="width:100%;max-width:420px;margin:auto"></div>
+        <button id="scanBtn" type="button" class="tab" style="width:100%;margin-top:12px">AKTIFKAN KAMERA & SCAN QR</button>
+        <div id="scanStatus" style="margin-top:10px;font-weight:700;color:#65718b">Belum melakukan pemindaian.</div>
+      </div>
 
       <label for="storeSelect">STORE BERTUGAS</label>
-      <select id="storeSelect" autocomplete="organization">
+      <select id="storeSelect" autocomplete="organization" disabled>
         <option value="">Memuat daftar store...</option>
       </select>
 
@@ -119,7 +127,7 @@
       <div id="notice" class="notice" role="status" aria-live="polite"></div>
       <div class="meta">
         <span class="pill" id="apiStatus">Menghubungkan API...</span>
-        <span class="pill">BACKEND V2.0</span>
+        <span class="pill">BACKEND V2.1</span>
         <span class="pill">NIK ONLY · TANPA PIN</span>
       </div>
     </section>
@@ -141,17 +149,19 @@
       </ul>
     </section>
 
-    <div class="footer">CREW BREAK MONITORING V2.0 · ASIA/JAKARTA</div>
+    <div class="footer">CREW BREAK MONITORING V2.0 · ASIA/JAKARTA · DYNAMIC QR</div>
   </main>
 
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 (function () {
   "use strict";
 
   const CONFIG = {
-    // URL Web App V2.0 yang sudah terverifikasi aktif.
+    // URL Web App deployment lama dipertahankan; deploy V2.0 sebagai versi baru
+    // pada deployment yang sama agar URL ini tidak berubah.
     API_URL: "https://script.google.com/macros/s/AKfycbxu0M-rpP90WZj2RnC1EGMvVQf3YlHuW6V61CUIYvrv0c_4P1F8-ldvqZSJ4lG44gFEHA/exec",
-    EXPECTED_BUILD: "CBM_V2_0_EXISTING_DB_NIK_ONLY",
+    EXPECTED_BUILD: "CBM_V2_1_DYNAMIC_QR_CAMERA_NIK_ONLY",
     REQUEST_TIMEOUT_MS: 15000
   };
 
@@ -162,6 +172,10 @@
   const apiStatus = el("apiStatus");
   const startBtn = el("startBtn");
   const endBtn = el("endBtn");
+  const scanBtn = el("scanBtn");
+  const scanStatus = el("scanStatus");
+  let verifiedQrToken = "";
+  let qrScanner = null;
 
   function showNotice(message, type) {
     notice.textContent = message || "Tidak ada pesan dari server.";
@@ -236,11 +250,11 @@
         storeSelect.appendChild(option);
       });
 
-      apiStatus.textContent = "API V2.0 TERHUBUNG";
+      apiStatus.textContent = "API V2.1 TERHUBUNG";
       if (!stores.length) {
         showNotice("Backend aktif, tetapi belum ada store berstatus ACTIVE pada MASTER STORE.", "error");
       } else {
-        showNotice("Sistem siap digunakan. Pilih store dan masukkan NIK crew.", "info");
+        showNotice("Silakan scan QR dinamis pada layar store terlebih dahulu.", "info");
       }
     } catch (error) {
       apiStatus.textContent = "API TIDAK TERHUBUNG";
@@ -252,6 +266,11 @@
   async function submitBreak(action) {
     const storeCode = storeSelect.value;
     const nik = normalizeNik(nikInput.value);
+
+    if (!verifiedQrToken) {
+      showNotice("Wajib scan QR dinamis store melalui kamera sebelum absensi.", "error");
+      return;
+    }
 
     if (!storeCode) {
       showNotice("Silakan pilih store tempat bertugas.", "error");
@@ -271,7 +290,8 @@
       const data = await jsonp({
         action: action,
         storeCode: storeCode,
-        nik: nik
+        nik: nik,
+        qrToken: verifiedQrToken
       });
 
       if (!data || typeof data.success !== "boolean") {
@@ -302,6 +322,42 @@
     }
   }
 
+  async function startCameraScan() {
+    if (!window.Html5Qrcode) {
+      showNotice("Modul kamera gagal dimuat. Periksa koneksi internet.", "error");
+      return;
+    }
+    scanBtn.disabled = true;
+    scanStatus.textContent = "Meminta izin kamera...";
+    try {
+      if (!qrScanner) qrScanner = new Html5Qrcode("qr-reader");
+      await qrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 240, height: 240 } }, async (decodedText) => {
+        let payload;
+        try { payload = JSON.parse(decodedText); } catch (_) { scanStatus.textContent = "QR bukan format Crew Break Monitoring."; return; }
+        if (!payload || payload.v !== 2.1 || !payload.token || !payload.storeCode) {
+          scanStatus.textContent = "QR tidak valid. Arahkan kamera ke QR dinamis store.";
+          return;
+        }
+        verifiedQrToken = payload.token;
+        const matching = Array.from(storeSelect.options).find(o => o.value.toUpperCase() === String(payload.storeCode).toUpperCase());
+        if (!matching) { verifiedQrToken = ""; scanStatus.textContent = "Store pada QR tidak terdaftar."; return; }
+        storeSelect.value = matching.value;
+        storeSelect.disabled = true;
+        scanStatus.textContent = "QR valid: " + matching.textContent + ". Masa berlaku QR sedang diverifikasi server saat transaksi.";
+        showNotice("QR store berhasil dipindai. Silakan masukkan NIK crew.", "success");
+        try { await qrScanner.stop(); } catch (_) {}
+        scanBtn.disabled = false;
+        scanBtn.textContent = "SCAN ULANG QR";
+      }, () => {});
+      scanStatus.textContent = "Kamera aktif. Arahkan ke QR pada layar store.";
+    } catch (err) {
+      scanBtn.disabled = false;
+      scanStatus.textContent = "Kamera tidak dapat dibuka: " + err;
+      showNotice("Izinkan akses kamera dan pastikan website dibuka melalui HTTPS.", "error");
+    }
+  }
+
+  scanBtn.addEventListener("click", startCameraScan);
   startBtn.addEventListener("click", () => submitBreak("startBreak"));
   endBtn.addEventListener("click", () => submitBreak("endBreak"));
 
@@ -318,6 +374,8 @@
     el("crewPanel").style.display = "none";
     el("managerPanel").classList.add("active");
   });
+
+  storeSelect.addEventListener("change", () => { verifiedQrToken = ""; });
 
   nikInput.addEventListener("input", () => {
     nikInput.value = nikInput.value.toUpperCase().replace(/\s+/g, "");
