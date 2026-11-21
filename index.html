@@ -37,9 +37,15 @@ button{font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.btn{b
 
 <section id="crewPanel">
  <div class="card">
-  <h2>Scan QR Istirahat</h2>
-  <p class="muted small">Scan QR resmi C17 untuk membuka halaman ini dengan token store. QR harus dibuka dari kamera HP. Token tidak ditampilkan di layar.</p>
-  <div id="qrState" class="notice info"></div>
+  <h2>Absensi Istirahat</h2>
+  <p class="muted small">Pilih store tempat bertugas, masukkan NIK, lalu pilih mulai atau selesai istirahat.</p>
+  <label for="storeCode">STORE BERTUGAS</label>
+  <select id="storeCode" required>
+    <option value="">Pilih store</option>
+    <option value="C17">C17 — SSS MENTENG</option>
+    <option value="C33">C33 — SKS CITY WALK SUDIRMAN</option>
+    <option value="C87">C87 — SS CITRA TOWER</option>
+  </select>
   <label for="nik">NIK CREW</label>
   <input id="nik" autocomplete="username" placeholder="Masukkan NIK" maxlength="40">
 <div class="grid2" style="margin-top:18px">
@@ -48,7 +54,7 @@ button{font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.btn{b
   </div>
   <div id="crewMessage" class="notice" role="status"></div>
  </div>
- <div class="card"><h3>Ketentuan</h3><p class="muted small">Satu sesi per crew per tanggal. Waktu dihitung oleh server, bukan jam HP. Scan kembali untuk mengakhiri istirahat. Jika ada kendala, laporkan kepada PIC agar dilakukan verifikasi.</p></div>
+ <div class="card"><h3>Ketentuan</h3><p class="muted small">Satu sesi per crew per tanggal. Waktu dihitung oleh server, bukan jam HP. Gunakan store tempat kamu bertugas untuk mulai dan menyelesaikan istirahat.</p></div>
 </section>
 
 <section id="managerPanel" class="hidden">
@@ -77,7 +83,7 @@ button{font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.btn{b
   <div class="card"><h2>Riwayat Istirahat</h2><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Mulai</th><th>Selesai</th><th>Durasi</th><th>Over</th><th>Status</th></tr></thead><tbody id="logRows"></tbody></table></div></div>
  </div>
 </section>
-<div class="foot">CREW BREAK MONITORING V1.0 · PILOT SSS MENTENG</div>
+<div class="foot">CREW BREAK MONITORING V1.1 · SINGLE WEBSITE</div>
 </main>
 <script>
 "use strict";
@@ -90,12 +96,10 @@ button{font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.btn{b
 */
 const CONFIG = {
   API_URL: "https://script.google.com/macros/s/AKfycbx8LgsbrXjfCAoCdMrrFoeg_n_-SPoXSh4O72zBh0I6ty7kOxU8U4jKkOw7Cp1tGb371A/exec",
-  STORE_CODE: "C17",
   BREAK_LIMIT: 60
 };
 
 const $ = id => document.getElementById(id);
-const storeToken = new URLSearchParams(location.search).get("token") || "";
 let managerSession = "";
 let isBusy = false;
 
@@ -118,11 +122,6 @@ function showPanel(name) {
 $("tabCrew").addEventListener("click", () => showPanel("crew"));
 $("tabManager").addEventListener("click", () => showPanel("manager"));
 
-if (!storeToken) {
-  notice("qrState", "error", "Token QR belum ada. Scan QR resmi store C17 terlebih dahulu.");
-} else {
-  notice("qrState", "ok", "QR terdeteksi. Silakan masukkan NIK.");
-}
 if (!configured()) {
   notice("crewMessage", "info", "Website belum terhubung ke backend. Admin perlu mengisi URL Web App Apps Script pada CONFIG.API_URL.");
 }
@@ -138,7 +137,7 @@ function callApi(payload) {
     const script = document.createElement("script");
     const params = new URLSearchParams({
       action: payload.action || "",
-      token: payload.token || "",
+      storeCode: payload.storeCode || "",
       nik: payload.nik || "",
       callback: callbackName
     });
@@ -170,7 +169,8 @@ function callApi(payload) {
 async function submitBreak(action) {
   if (isBusy) return;
   const nik = $("nik").value.trim().toUpperCase();
-  if (!storeToken) return notice("crewMessage", "error", "Scan QR resmi C17 terlebih dahulu.");
+  const storeCode = $("storeCode").value;
+  if (!storeCode) return notice("crewMessage", "error", "Pilih store tempat bertugas.");
   if (!nik) return notice("crewMessage", "error", "Masukkan NIK crew.");
 
   isBusy = true;
@@ -179,12 +179,12 @@ async function submitBreak(action) {
   try {
     const result = await callApi({
       action: action === "start" ? "startBreak" : "endBreak",
-      storeCode: CONFIG.STORE_CODE, token: storeToken, nik
+      storeCode, nik
     });
     if (!result.success) throw new Error(result.message || "Transaksi ditolak.");
     const lines = [result.message || "Transaksi berhasil", "Crew: " + (result.name || nik)];
     if (action === "start") {
-      lines.push("Store: " + (result.store || "SSS MENTENG"));
+      lines.push("Store: " + (result.store || storeCode));
       lines.push("Mulai: " + (result.startTime || "-"));
     } else {
       lines.push("Selesai: " + (result.finishTime || "-"));
