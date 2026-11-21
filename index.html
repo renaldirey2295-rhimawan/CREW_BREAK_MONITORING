@@ -42,9 +42,7 @@ button{font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.btn{b
   <div id="qrState" class="notice info"></div>
   <label for="nik">NIK CREW</label>
   <input id="nik" autocomplete="username" placeholder="Masukkan NIK" maxlength="40">
-  <label for="pin">PIN 6 DIGIT</label>
-  <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Masukkan PIN" maxlength="6">
-  <div class="grid2" style="margin-top:18px">
+<div class="grid2" style="margin-top:18px">
     <button class="btn green" id="startBtn" type="button">MULAI ISTIRAHAT</button>
     <button class="btn red" id="endBtn" type="button">SELESAI ISTIRAHAT</button>
   </div>
@@ -56,7 +54,7 @@ button{font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.btn{b
 <section id="managerPanel" class="hidden">
  <div class="card">
   <h2>Akses Manager Store</h2>
-  <p class="muted small">Dashboard hanya boleh dibuka oleh pengguna yang diberi izin di backend. PIN crew tidak memberikan akses manager.</p>
+  <p class="muted small">Dashboard hanya boleh dibuka oleh pengguna yang diberi izin di backend. Akses crew hanya menggunakan NIK; dashboard manager tetap memerlukan login terpisah.</p>
   <label for="managerUser">ID / Email Manager</label><input id="managerUser" autocomplete="username" placeholder="Akun manager">
   <label for="managerPassword">Kata Sandi Manager</label><input id="managerPassword" type="password" autocomplete="current-password" placeholder="Kata sandi">
   <button class="btn blue" id="managerLogin" type="button" style="margin-top:14px">LOGIN & MUAT DATA</button>
@@ -89,7 +87,7 @@ button{font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.btn{b
   GitHub Pages tidak dapat memanggil google.script.run.
   Endpoint ini harus menangani CORS dan meneruskan request secara aman
   ke Google Apps Script. Backend wajib memvalidasi token dan otorisasi.
-  Jangan menaruh API secret, PIN admin, atau token backend di file ini.
+  Jangan menaruh API secret atau token backend di file ini.
 */
 const CONFIG = {
   API_URL: "ISI_URL_API_BRIDGE_HTTPS_DI_SINI",
@@ -123,7 +121,7 @@ $("tabManager").addEventListener("click", () => showPanel("manager"));
 if (!storeToken) {
   notice("qrState", "error", "Token QR belum ada. Scan QR resmi store C17 terlebih dahulu.");
 } else {
-  notice("qrState", "ok", "QR terdeteksi. Silakan isi NIK dan PIN.");
+  notice("qrState", "ok", "QR terdeteksi. Silakan masukkan NIK.");
 }
 if (!configured()) {
   notice("crewMessage", "info", "Website belum terhubung ke backend. Admin perlu mengisi CONFIG.API_URL setelah API bridge siap.");
@@ -147,10 +145,8 @@ async function callApi(payload) {
 async function submitBreak(action) {
   if (isBusy) return;
   const nik = $("nik").value.trim().toUpperCase();
-  const pin = $("pin").value.trim();
   if (!storeToken) return notice("crewMessage", "error", "Scan QR resmi C17 terlebih dahulu.");
   if (!nik) return notice("crewMessage", "error", "Masukkan NIK crew.");
-  if (!/^\d{6}$/.test(pin)) return notice("crewMessage", "error", "PIN harus 6 digit angka.");
 
   isBusy = true;
   $("startBtn").disabled = $("endBtn").disabled = true;
@@ -158,7 +154,7 @@ async function submitBreak(action) {
   try {
     const result = await callApi({
       action: action === "start" ? "startBreak" : "endBreak",
-      storeCode: CONFIG.STORE_CODE, token: storeToken, nik, pin
+      storeCode: CONFIG.STORE_CODE, token: storeToken, nik
     });
     if (!result.success) throw new Error(result.message || "Transaksi ditolak.");
     const lines = [result.message || "Transaksi berhasil", "Crew: " + (result.name || nik)];
@@ -172,7 +168,6 @@ async function submitBreak(action) {
       lines.push("Status: " + (result.status || "-"));
     }
     notice("crewMessage", "ok", lines.join("\n"));
-    $("pin").value = "";
   } catch (error) {
     notice("crewMessage", "error", error.message || "Gagal menghubungi server.");
   } finally {
