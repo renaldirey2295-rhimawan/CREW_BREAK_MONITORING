@@ -31,7 +31,7 @@ button{font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.btn{b
   <div class="kicker">STORE OPERATIONS CONTROL SYSTEM</div>
   <h1>CREW BREAK MONITORING</h1>
   <p class="subtitle">Absensi istirahat digital & monitoring kedisiplinan</p>
-  <span class="pill">SSS MENTENG · C17 · STANDAR 60 MENIT</span>
+  <span class="pill">MULTI STORE · STANDAR 60 MENIT</span>
 </header>
 <nav class="tabs" aria-label="Menu"><button class="tab active" id="tabCrew" type="button">ABSENSI CREW</button><button class="tab" id="tabManager" type="button">DASHBOARD MANAGER</button></nav>
 
@@ -43,7 +43,7 @@ button{font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.btn{b
   <select id="storeCode" required>
     <option value="">Pilih store</option>
     <option value="C17">C17 — SSS MENTENG</option>
-    <option value="C33">C33 — SKS CITY WALK SUDIRMAN</option>
+    <option value="C33">C33 — SKS CITYWALK</option>
     <option value="C87">C87 — SS CITRA TOWER</option>
   </select>
   <label for="nik">NIK CREW</label>
@@ -83,7 +83,7 @@ button{font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.btn{b
   <div class="card"><h2>Riwayat Istirahat</h2><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Mulai</th><th>Selesai</th><th>Durasi</th><th>Over</th><th>Status</th></tr></thead><tbody id="logRows"></tbody></table></div></div>
  </div>
 </section>
-<div class="foot">CREW BREAK MONITORING V1.1 · SINGLE WEBSITE</div>
+<div class="foot">CREW BREAK MONITORING V1.1 · SINGLE WEBSITE · NIK ONLY</div>
 </main>
 <script>
 "use strict";
@@ -139,6 +139,7 @@ function callApi(payload) {
       action: payload.action || "",
       storeCode: payload.storeCode || "",
       nik: payload.nik || "",
+      clientBuild: "CBM_WEB_1_1_NIK_ONLY",
       callback: callbackName
     });
     let finished = false;
@@ -181,7 +182,7 @@ async function submitBreak(action) {
       action: action === "start" ? "startBreak" : "endBreak",
       storeCode, nik
     });
-    if (!result.success) throw new Error(result.message || "Transaksi ditolak.");
+    if (!result.success) throw new Error((result.message || "Transaksi ditolak.") + (result.version ? " [API " + result.version + "]" : ""));
     const lines = [result.message || "Transaksi berhasil", "Crew: " + (result.name || nik)];
     if (action === "start") {
       lines.push("Store: " + (result.store || storeCode));
@@ -279,6 +280,22 @@ $("managerLogin").addEventListener("click", async () => {
 });
 $("refresh").addEventListener("click", loadDashboard);
 $("period").value = new Date().toLocaleDateString("sv-SE", {year:"numeric",month:"2-digit"}).slice(0,7);
+
+// Verifikasi versi backend saat halaman dibuka.
+// Tidak membuat transaksi dan tidak memerlukan NIK.
+(async function verifyBackend() {
+  try {
+    const result = await callApi({ action: "health" });
+    if (result && result.success) {
+      notice("crewMessage", "info",
+        "Backend terhubung · API V" + (result.version || "?") +
+        " · " + ((result.stores || []).length) + " store aktif. Silakan masukkan NIK.");
+    }
+  } catch (err) {
+    notice("crewMessage", "error", "Koneksi backend gagal: " + err.message);
+  }
+})();
+
 </script>
 </body>
 </html>
